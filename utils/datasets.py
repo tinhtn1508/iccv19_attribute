@@ -203,27 +203,27 @@ def Get_Dataset(experiment, approach):
         transforms.ToTensor(),
         normalize
         ])
-    transform_test = transforms.Compose([
-        transforms.Resize(size=(256, 128)),
-        transforms.ToTensor(),
-        normalize
-        ])
+    # transform_test = transforms.Compose([
+    #     transforms.Resize(size=(256, 128)),
+    #     transforms.ToTensor(),
+    #     normalize
+    #     ])
 
     if experiment == 'pa100k':
-        train_dataset = MultiLabelDataset(root='data_path',
-                    label='train_list_path', transform=transform_train)
-        val_dataset = MultiLabelDataset(root='data_path',
-                    label='val_list_path', transform=transform_test)
+        train_dataset = MultiLabelDataset(split=0,
+                    data_path='./dataset/dataset.pkl', transform=transform_train)
+        val_dataset = MultiLabelDataset(split=1,
+                    data_path='./dataset/dataset.pkl', transform=transform_train)
         return train_dataset, val_dataset, attr_nums['pa100k'], description['pa100k']
-    elif experiment == 'rap':
-        train_dataset = MultiLabelDataset(root='data_path',
-                    label='train_list_path', transform=transform_train)
-        val_dataset = MultiLabelDataset(root='data_path',
-                    label='val_list_path', transform=transform_test)
-        return train_dataset, val_dataset, attr_nums['rap'], description['rap']
-    elif experiment == 'peta':
-        train_dataset = MultiLabelDataset(root='data_path',
-                    label='train_list_path', transform=transform_train)
-        val_dataset = MultiLabelDataset(root='data_path',
-                    label='val_list_path', transform=transform_test)
-        return train_dataset, val_dataset, attr_nums['peta'], description['peta']
+    # elif experiment == 'rap':
+    #     train_dataset = MultiLabelDataset(root='data_path',
+    #                 label='train_list_path', transform=transform_train)
+    #     val_dataset = MultiLabelDataset(root='data_path',
+    #                 label='val_list_path', transform=transform_test)
+    #     return train_dataset, val_dataset, attr_nums['rap'], description['rap']
+    # elif experiment == 'peta':
+        # train_dataset = MultiLabelDataset(root='data_path',
+        #             label='train_list_path', transform=transform_train)
+        # val_dataset = MultiLabelDataset(root='data_path',
+        #             label='val_list_path', transform=transform_test)
+        # return train_dataset, val_dataset, attr_nums['peta'], description['peta']
