@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.tensor as tensor
 from torch.nn import functional as F
+from torch.hub import load_state_dict_from_url
 
 __all__ = ['inception_iccv']
 
@@ -11,7 +12,7 @@ def inception_iccv(pretrained=True, debug=False, **kwargs):
         pretrained model: 'https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/bninception.py'
     """
     if pretrained:
-        pretrained_dict = torch.load('model/bn_inception-52deb4733.pth')
+        pretrained_dict = load_state_dict_from_url('http://data.lip6.fr/cadene/pretrainedmodels/bn_inception-52deb4733.pth')
         model_dict = model.state_dict()
         new_dict = {}
         for k,_ in model_dict.items():
