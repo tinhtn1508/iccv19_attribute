@@ -6,37 +6,67 @@ import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+import pickle
 
 def default_loader(path):
     return Image.open(path).convert('RGB')
+# class MultiLabelDataset(data.Dataset):
+#     def __init__(self, root, label, transform = None, loader = default_loader):
+#         images = []
+#         labels = open(label).readlines()
+#         for line in labels:
+#             items = line.split()
+#             img_name = items.pop(0)
+#             if os.path.isfile(os.path.join(root, img_name)):
+#                 cur_label = tuple([int(v) for v in items])
+#                 images.append((img_name, cur_label))
+#             else:
+#                 print(os.path.join(root, img_name) + 'Not Found.')
+#         self.root = root
+#         self.images = images
+#         self.transform = transform
+#         self.loader = loader
+
+#     def __getitem__(self, index):
+#         img_name, label = self.images[index]
+#         img = self.loader(os.path.join(self.root, img_name))
+#         raw_img = img.copy()
+#         if self.transform is not None:
+#             img = self.transform(img)
+#         return img, torch.Tensor(label)
+
+#     def __len__(self):
+#         return len(self.images)
+
 class MultiLabelDataset(data.Dataset):
-    def __init__(self, root, label, transform = None, loader = default_loader):
-        images = []
-        labels = open(label).readlines()
-        for line in labels:
-            items = line.split()
-            img_name = items.pop(0)
-            if os.path.isfile(os.path.join(root, img_name)):
-                cur_label = tuple([int(v) for v in items])
-                images.append((img_name, cur_label))
-            else:
-                print(os.path.join(root, img_name) + 'Not Found.')
-        self.root = root
-        self.images = images
+    def __init__(self, split, data_path, transform = None, loader = default_loader):
+        dataset_info = pickle.load(open(data_path, 'rb+'))
+        img_id = dataset_info.image_name
+        attr_label = dataset_info.label
+
         self.transform = transform
         self.loader = loader
+        self.root_path = dataset_info.root
+        self.attr_id = dataset_info.attr_name
+        self.attr_num = len(self.attr_id)
+        self.img_idx = dataset_info.partition[split]
+
+        self.img_num = self.img_idx.shape[0]
+        self.img_id = [img_id[i] for i in self.img_idx]
+        self.label = attr_label[self.img_idx]
+
 
     def __getitem__(self, index):
-        img_name, label = self.images[index]
-        img = self.loader(os.path.join(self.root, img_name))
-        raw_img = img.copy()
+        imgname, gt_label, imgidx = self.img_id[index], self.label[index], self.img_idx[index]
+        imgpath = os.path.join(self.root_path, imgname)
+        img = self.loader(imgpath)
+        
         if self.transform is not None:
             img = self.transform(img)
-        return img, torch.Tensor(label)
+        return img, torch.Tensor(gt_label)
 
     def __len__(self):
-        return len(self.images)
-
+        return len(self.img_id)
 
 attr_nums = {}
 attr_nums['pa100k'] = 26
