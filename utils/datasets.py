@@ -210,9 +210,9 @@ def Get_Dataset(experiment, approach):
     #     ])
 
     if experiment == 'pa100k':
-        train_dataset = MultiLabelDataset(split=0,
+        train_dataset = MultiLabelDataset(split="train",
                     data_path='./dataset/dataset.pkl', transform=transform_train)
-        val_dataset = MultiLabelDataset(split=1,
+        val_dataset = MultiLabelDataset(split="test",
                     data_path='./dataset/dataset.pkl', transform=transform_train)
         return train_dataset, val_dataset, attr_nums['pa100k'], description['pa100k']
     # elif experiment == 'rap':
