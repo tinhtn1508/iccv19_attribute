@@ -57,7 +57,7 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset,

@@ -38,8 +38,8 @@ def generate_data_description(save_dir):
     dataset.attr_name = [pa100k_data['attributes'][i][0][0] for i in range(26)]
 
     dataset.partition = EasyDict()
-    dataset.partition.train = np.arange(0, 80000)  # np.array(range(80000))
-    dataset.partition.val = np.arange(80000, 90000)  # np.array(range(80000, 90000))
+    dataset.partition.train = np.arange(0, 90000)  # np.array(range(80000))
+    # dataset.partition.val = np.arange(90000, 100000)  # np.array(range(80000, 90000))
     dataset.partition.test = np.arange(90000, 100000)  # np.array(range(90000, 100000))
     dataset.partition.trainval = np.arange(0, 90000)  # np.array(range(90000))
 

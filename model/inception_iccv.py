@@ -12,8 +12,8 @@ def inception_iccv(pretrained=True, debug=False, **kwargs):
         pretrained model: 'https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/bninception.py'
     """
     if pretrained:
-        # pretrained_dict = load_state_dict_from_url('http://data.lip6.fr/cadene/pretrainedmodels/bn_inception-52deb4733.pth')
-        pretrained_dict = torch.load('/content/mydrive/My\ Drive/pretrain/bn_inception-52deb4733.pth')
+        pretrained_dict = load_state_dict_from_url('http://data.lip6.fr/cadene/pretrainedmodels/bn_inception-52deb4733.pth')
+        # pretrained_dict = torch.load('/content/mydrive/My\ Drive/pretrain/bn_inception-52deb4733.pth')
         model_dict = model.state_dict()
         new_dict = {}
         for k,_ in model_dict.items():
@@ -40,6 +40,23 @@ class ChannelAttn(nn.Module):
         x = self.conv2(x)
         return torch.sigmoid(x)
 
+class NewChannelAttn(nn.Module):
+    def __init__(self, in_channels, pooling_size, reduction_rate=16, num_classes=26):
+        super(NewChannelAttn, self).__init__()
+        assert in_channels%reduction_rate == 0
+        self.conv1 = nn.Conv2d(in_channels, in_channels // reduction_rate, kernel_size=1, stride=1, padding=0)
+        self.conv2 = nn.Conv2d(in_channels // reduction_rate, in_channels, kernel_size=1, stride=1, padding=0)
+        self.fc = nn.Linear(in_channels*reduction_rate, num_classes)
+
+    def forward(self, x):
+        # squeeze operation (global average pooling)
+        x = F.avg_pool2d(x, x.size()[2:])
+        # excitation operation (2 conv layers)
+        x = F.relu(self.conv1(x))
+        x = self.conv2(x).view(-1)
+        x = self.fc(x)
+        return nn.Softmax(dim=0)(x.reshape(-1, 1))
+
 
 class SpatialTransformBlock(nn.Module):
     def __init__(self, num_classes, pooling_size, channels):
@@ -51,12 +68,13 @@ class SpatialTransformBlock(nn.Module):
 
         self.gap_list = nn.ModuleList()
         self.fc_list = nn.ModuleList()
-        self.att_list = nn.ModuleList()
+        # self.att_list = nn.ModuleList()
         self.stn_list = nn.ModuleList()
+        self.att = NewChannelAttn(channels, pooling_size, 32, num_classes)
         for i in range(self.num_classes):
             self.gap_list.append(nn.AvgPool2d((pooling_size, pooling_size//2), stride=1, padding=0, ceil_mode=True, count_include_pad=True))
             self.fc_list.append(nn.Linear(channels, 1))
-            self.att_list.append(ChannelAttn(channels))
+            # self.att_list.append(ChannelAttn(channels))
             self.stn_list.append(nn.Linear(channels, 4))
 
     def stn(self, x, theta):
@@ -76,8 +94,10 @@ class SpatialTransformBlock(nn.Module):
     def forward(self, features):
         pred_list = []
         bs = features.size(0)
+        att_features = self.att(features)
         for i in range(self.num_classes):
-            stn_feature = features * self.att_list[i](features) + features
+            # stn_feature = features * self.att_list[i](features) + features
+            stn_feature = features * att_features[i] + features
 
             theta_i = self.stn_list[i](F.avg_pool2d(stn_feature, stn_feature.size()[2:]).view(bs,-1)).view(-1,4)
             theta_i = self.transform_theta(theta_i, i)
