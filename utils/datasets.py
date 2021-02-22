@@ -3,6 +3,7 @@ import sys
 from PIL import Image
 import torch
 import numpy as np
+from torch._C import dtype
 import torch.utils.data as data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -71,7 +72,7 @@ class MultiLabelDataset(data.Dataset):
 attr_nums = {}
 attr_nums['pa100k'] = 26
 attr_nums['rap'] = 51
-attr_nums['peta'] = 35
+attr_nums['peta'] = 105
 
 description = {}
 description['pa100k'] = ['Female',
@@ -101,41 +102,16 @@ description['pa100k'] = ['Female',
                         'Skirt&Dress',
                         'boots']
 
-description['peta'] = ['Age16-30',
-                        'Age31-45',
-                        'Age46-60',
-                        'AgeAbove61',
-                        'Backpack',
-                        'CarryingOther',
-                        'Casual lower',
-                        'Casual upper',
-                        'Formal lower',
-                        'Formal upper',
-                        'Hat',
-                        'Jacket',
-                        'Jeans',
-                        'Leather Shoes',
-                        'Logo',
-                        'Long hair',
-                        'Male',
-                        'Messenger Bag',
-                        'Muffler',
-                        'No accessory',
-                        'No carrying',
-                        'Plaid',
-                        'PlasticBags',
-                        'Sandals',
-                        'Shoes',
-                        'Shorts',
-                        'Short Sleeve',
-                        'Skirt',
-                        'Sneaker',
-                        'Stripes',
-                        'Sunglasses',
-                        'Trousers',
-                        'Tshirt',
-                        'UpperOther',
-                        'V-Neck']
+description['peta'] = ['personalLess30',
+                        'personalLess45',
+                        'personalLess60',
+                        'personalLarger60',
+                        'carryingBackpack',
+                        'carryingOther',
+                        'lowerBodyCasual',
+                        'upperBodyCasual',
+                        'lowerBodyFormal',
+                        'upperBodyFormal', 'accessoryHat', 'upperBodyJacket', 'lowerBodyJeans', 'footwearLeatherShoes', 'upperBodyLogo', 'hairLong', 'personalMale', 'carryingMessengerBag', 'accessoryMuffler', 'accessoryNothing', 'carryingNothing', 'upperBodyPlaid', 'carryingPlasticBags', 'footwearSandals', 'footwearShoes', 'lowerBodyShorts', 'upperBodyShortSleeve', 'lowerBodyShortSkirt', 'footwearSneaker', 'upperBodyThinStripes', 'accessorySunglasses', 'lowerBodyTrousers', 'upperBodyTshirt', 'upperBodyOther', 'upperBodyVNeck', 'upperBodyBlack', 'upperBodyBlue', 'upperBodyBrown', 'upperBodyGreen', 'upperBodyGrey', 'upperBodyOrange', 'upperBodyPink', 'upperBodyPurple', 'upperBodyRed', 'upperBodyWhite', 'upperBodyYellow', 'lowerBodyBlack', 'lowerBodyBlue', 'lowerBodyBrown', 'lowerBodyGreen', 'lowerBodyGrey', 'lowerBodyOrange', 'lowerBodyPink', 'lowerBodyPurple', 'lowerBodyRed', 'lowerBodyWhite', 'lowerBodyYellow', 'hairBlack', 'hairBlue', 'hairBrown', 'hairGreen', 'hairGrey', 'hairOrange', 'hairPink', 'hairPurple', 'hairRed', 'hairWhite', 'hairYellow', 'footwearBlack', 'footwearBlue', 'footwearBrown', 'footwearGreen', 'footwearGrey', 'footwearOrange', 'footwearPink', 'footwearPurple', 'footwearRed', 'footwearWhite', 'footwearYellow', 'accessoryHeadphone', 'personalLess15', 'carryingBabyBuggy', 'hairBald', 'footwearBoots', 'lowerBodyCapri', 'carryingShoppingTro', 'carryingUmbrella', 'personalFemale', 'carryingFolder', 'accessoryHairBand', 'lowerBodyHotPants', 'accessoryKerchief', 'lowerBodyLongSkirt', 'upperBodyLongSleeve', 'lowerBodyPlaid', 'lowerBodyThinStripes', 'carryingLuggageCase', 'upperBodyNoSleeve', 'hairShort', 'footwearStocking', 'upperBodySuit', 'carryingSuitcase', 'lowerBodySuits', 'upperBodySweater', 'upperBodyThickStripes']
 
 description['rap'] = ['Female',
                         'AgeLess16',
@@ -221,9 +197,9 @@ def Get_Dataset(experiment, approach):
     #     val_dataset = MultiLabelDataset(root='data_path',
     #                 label='val_list_path', transform=transform_test)
     #     return train_dataset, val_dataset, attr_nums['rap'], description['rap']
-    # elif experiment == 'peta':
-        # train_dataset = MultiLabelDataset(root='data_path',
-        #             label='train_list_path', transform=transform_train)
-        # val_dataset = MultiLabelDataset(root='data_path',
-        #             label='val_list_path', transform=transform_test)
-        # return train_dataset, val_dataset, attr_nums['peta'], description['peta']
+    elif experiment == 'peta':
+        train_dataset = MultiLabelDataset(split='train',
+                    data_path='./dataset/peta/peta_partition.pkl', transform=transform_train)
+        val_dataset = MultiLabelDataset(split='test',
+                    data_path='./dataset/peta/peta_partition.pkl', transform=transform_train)
+        return train_dataset, val_dataset, attr_nums['peta'], description['peta']

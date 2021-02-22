@@ -11,6 +11,8 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import model as models
+from loguru import logger
+logger.add("attention_{time}.log")
 
 from utils.datasets import Get_Dataset
 
@@ -35,7 +37,7 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true', re
 np.random.seed(1)
 torch.manual_seed(1)
 if torch.cuda.is_available(): torch.cuda.manual_seed(1)
-else: print('[CUDA unavailable]'); sys.exit()
+else: logger.info('[CUDA unavailable]'); sys.exit()
 best_accu = 0
 EPS = 1e-12
 
@@ -46,30 +48,30 @@ def main():
     global args, best_accu
     args = parser.parse_args()
 
-    print('=' * 100)
-    print('Arguments = ')
+    logger.info('=' * 100)
+    logger.info('Arguments = ')
     for arg in vars(args):
-        print('\t' + arg + ':', getattr(args, arg))
-    print('=' * 100)
+        logger.info('\t' + arg + ':', getattr(args, arg))
+    logger.info('=' * 100)
 
     # Data loading code
     train_dataset, val_dataset, attr_num, description = Get_Dataset(args.experiment, args.approach)
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
+        batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
+        batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
     # create model
     model = models.__dict__[args.approach](pretrained=True, num_classes=attr_num)
 
     # get the number of model parameters
-    print('Number of model parameters: {}'.format(
+    logger.info('Number of model parameters: {}'.format(
         sum([p.data.nelement() for p in model.parameters()])))
-    print('')
+    logger.info('')
 
     # for training on multiple GPUs.
     # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
@@ -78,15 +80,15 @@ def main():
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
+            logger.info("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
             args.start_epoch = checkpoint['epoch']
             best_accu = checkpoint['best_accu']
             model.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (epoch {})"
+            logger.info("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
+            logger.info("=> no checkpoint found at '{}'".format(args.resume))
 
     cudnn.benchmark = False
     cudnn.deterministic = True
@@ -173,7 +175,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         end = time.time()
 
         if i % args.print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
+            logger.info('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Accu {top1.val:.3f} ({top1.avg:.3f})'.format(
@@ -219,14 +221,14 @@ def validate(val_loader, model, criterion, epoch):
         end = time.time()
 
         if i % args.print_freq == 0:
-            print('Test: [{0}/{1}]\t'
+            logger.info('Test: [{0}/{1}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Accu {top1.val:.3f} ({top1.avg:.3f})'.format(
                       i, len(val_loader), batch_time=batch_time, loss=losses,
                       top1=top1))
 
-    print(' * Accu {top1.avg:.3f}'.format(top1=top1))
+    logger.info(' * Accu {top1.avg:.3f}'.format(top1=top1))
     return top1.avg
 
 
@@ -298,26 +300,26 @@ def test(val_loader, model, attr_num, description):
             if tp + fn != 0:
                 recall = recall + 1.0 * tp / (tp + fn)
 
-    print('=' * 100)
-    print('\t     Attr              \tp_true/n_true\tp_tol/n_tol\tp_pred/n_pred\tcur_mA')
+    logger.info('=' * 100)
+    logger.info('\t     Attr              \tp_true/n_true\tp_tol/n_tol\tp_pred/n_pred\tcur_mA')
     mA = 0.0
     for it in range(attr_num):
         cur_mA = ((1.0*pos_cnt[it]/pos_tol[it]) + (1.0*neg_cnt[it]/neg_tol[it])) / 2.0
         mA = mA + cur_mA
-        print('\t#{:2}: {:18}\t{:4}\{:4}\t{:4}\{:4}\t{:4}\{:4}\t{:.5f}'.format(it,description[it],pos_cnt[it],neg_cnt[it],pos_tol[it],neg_tol[it],(pos_cnt[it]+neg_tol[it]-neg_cnt[it]),(neg_cnt[it]+pos_tol[it]-pos_cnt[it]),cur_mA))
+        logger.info('\t#{:2}: {:18}\t{:4}\{:4}\t{:4}\{:4}\t{:4}\{:4}\t{:.5f}'.format(it,description[it],pos_cnt[it],neg_cnt[it],pos_tol[it],neg_tol[it],(pos_cnt[it]+neg_tol[it]-neg_cnt[it]),(neg_cnt[it]+pos_tol[it]-pos_cnt[it]),cur_mA))
     mA = mA / attr_num
-    print('\t' + 'mA:        '+str(mA))
+    logger.info('\t' + 'mA:        '+str(mA))
 
     if attr_num != 1:
         accu = accu / tol
         prec = prec / tol
         recall = recall / tol
         f1 = 2.0 * prec * recall / (prec + recall)
-        print('\t' + 'Accuracy:  '+str(accu))
-        print('\t' + 'Precision: '+str(prec))
-        print('\t' + 'Recall:    '+str(recall))
-        print('\t' + 'F1_Score:  '+str(f1))
-    print('=' * 100)
+        logger.info('\t' + 'Accuracy:  '+str(accu))
+        logger.info('\t' + 'Precision: '+str(prec))
+        logger.info('\t' + 'Recall:    '+str(recall))
+        logger.info('\t' + 'F1_Score:  '+str(f1))
+    logger.info('=' * 100)
 
 
 def save_checkpoint(state, epoch, prefix, filename='.pth.tar'):
@@ -355,9 +357,9 @@ def adjust_learning_rate(optimizer, epoch, decay_epoch):
             lr = lr * 0.1
         else:
             break
-    print()
-    print('Learning Rate:', lr)
-    print()
+    logger.info('\n')
+    logger.info('Learning Rate: {}'.format(lr))
+    logger.info('\n')
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -501,7 +503,7 @@ class Weighted_BCELoss(object):
                                         0.0838,
                                         0.4605,
                                         0.0124]).cuda()
-        #self.weights = None
+        self.weights = None
 
     def forward(self, output, target, epoch):
         if self.weights is not None:
