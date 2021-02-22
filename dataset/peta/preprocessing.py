@@ -66,8 +66,8 @@ def create_trainvaltest_split(traintest_split_file):
         train_image_name_int.append(trainval)
         test_image_name_int.append(test)
 
-    train_image_name = ['%05d.png'%(i) for i in train_image_name_int[0]]
-    test_image_name = ['%05d.png'%(i) for i in test_image_name_int[0]]
+    train_image_name = ['%05d.png'%(i+1) for i in train_image_name_int[0]]
+    test_image_name = ['%05d.png'%(i+1) for i in test_image_name_int[0]]
 
     dataset.image_name = train_image_name + test_image_name
     dataset.partition = EasyDict()
